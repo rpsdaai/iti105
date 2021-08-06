@@ -238,6 +238,23 @@ def do_loadModel(filename):
 		model = pickle.load(f)
 	return (model)
 
+# # Save results to disk
+# def do_saveResults(filename, model, which_library):
+# 	log.debug('--> do_saveResults(): ' + filename + ' library to use: ' + which_library)
+# 	with open(filename, 'wb') as f:
+# 		if which_library == 'p':
+# 			pickle.dump(model, f)
+# 		else:
+# 			joblib.dump(model, f)
+
+
+# # Load results from disk
+# def do_loadResults(filename):
+# 	log.debug('--> do_loadResults(): ' + filename)
+# 	with open(filename, 'rb') as f:
+# 		model = pickle.load(f)
+# 	return (model)    
+
 # Explore the dataset to get general feel
 if __name__ == '__main__':
     df = read_datatset(dataset_dir, datafile)
