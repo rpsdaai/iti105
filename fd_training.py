@@ -31,9 +31,6 @@ import xgboost as xgb
 # Gaussian Naive-Bayes
 from sklearn.naive_bayes import GaussianNB
 
-# Bagging
-from sklearn.ensemble import BaggingClassifier
-
 # Decision Tree Classifier
 from sklearn.tree import DecisionTreeClassifier
 
@@ -43,8 +40,14 @@ from catboost import CatBoostClassifier
 # LightGBM
 import lightgbm as lgbm
 
+# Bagging Classifier
+from sklearn.ensemble import BaggingClassifier
+
 # Metrics
 from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.metrics import average_precision_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import log_loss
@@ -89,6 +92,8 @@ logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
 # __name__ contains the full name of the current module
 log = logging.getLogger(__name__)
+
+results_dict = {}
 
 def do_SplitData(df, cols2drop, nSplits, testSize, randomState, targetLabel):
     log.info('do_SplitData(): cols2drop: ' + ' '.join(cols2drop) + ' nSplits: ' + str(nSplits) + ' testSize: ' + str(testSize) + ' randomState: ' + str(randomState) + ' targetLabel: ' + targetLabel)
@@ -161,6 +166,7 @@ def do_plotConfusionMatrix(filename, model, xtest, ytest, colorMap):
     cfm = plot_confusion_matrix(model, xtest, ytest, cmap=colorMap, normalize='true')
     #cfm.plot()
     plt.savefig(filename)
+    plt.close()
     # plt.grid(False)
     #plt.show()
 
@@ -174,28 +180,59 @@ def do_plotPRCurve(filename, model, xtest, ytest):
     log.info('--> do_plotPRCurve()')
     pr_curve = plot_precision_recall_curve(model, xtest, ytest)
     plt.savefig(filename)
+    plt.close()
     return pr_curve
 
 def do_plotAucRocCurve(filename, model, xtest, ytest):
     log.info('--> do_plotAucRocCurve()')
     roc_curve = plot_roc_curve(model, xtest, ytest)
     plt.savefig(filename)
+    plt.close()
     return roc_curve
 
-def do_getAucRocScores(ytest, ypred):
-    log.info('--> do_getAucRocScores()')
+def do_getAucRocScore(ytest, ypred):
+    log.info('--> do_getAucRocScore()')
     return roc_auc_score(ytest, ypred)
 
 def do_getRecallScore(ytest, ypred):
     log.info('--> do_getRecallScore()')
     return recall_score(ytest, ypred)
 
+def do_getPrecisionScore(ytest, ypred):
+    log.info('--> do_getPrecisionScore()')
+    return precision_score(ytest, ypred)    
+
+def do_getF1Score(ytest, ypred):
+    log.info('--> do_getF1Score()')
+    return f1_score(ytest, ypred)     
+
+def do_getBalancedAccuracyScore(ytest, ypred):
+    log.info('--> do_getBalancedAccuracyScore()')
+    return balanced_accuracy_score(ytest, ypred)      
+
 def do_evaluateModel(pipeline, xtest, ytest):
     log.info('--> do_evaluateModel()')
+
     ypred = pipeline.predict(xtest)
+
+    # Ref: https://www.geeksforgeeks.org/python-nested-dictionary/
+    results = {}
+    results[pipeline.steps[2][0]] = {}
+    results[pipeline.steps[2][0]]['classificationReport'] = do_ClassificationReport(ytest, ypred)
+    results[pipeline.steps[2][0]]['auc_roc_score'] = do_getAucRocScore(ytest, ypred)
+    results[pipeline.steps[2][0]]['recall_scores'] = do_getRecallScore(ytest, ypred)
+    results[pipeline.steps[2][0]]['precision_scores'] = do_getPrecisionScore(ytest, ypred)
+    results[pipeline.steps[2][0]]['f1_scores'] = do_getF1Score(ytest, ypred)
+    results[pipeline.steps[2][0]]['balanced_accuracy_scores'] = do_getBalancedAccuracyScore(ytest, ypred)
+
     log.info('Classification Report: ' + do_ClassificationReport(ytest, ypred))
-    log.info('AUC ROC Score: ' + str(do_getAucRocScores(ytest, ypred)))
+    log.info('AUC ROC Score: ' + str(do_getAucRocScore(ytest, ypred)))
     log.info('Recall Score: ' + str(do_getRecallScore(ytest, ypred))) 
+    log.info('Precision Score: ' + str(do_getPrecisionScore(ytest, ypred))) 
+    log.info('F1 Score: ' + str(do_getF1Score(ytest, ypred)))
+    log.info('Balanced Accuracy Score: ' + str(do_getBalancedAccuracyScore(ytest, ypred)))
+
+    return results
 
 def do_plotEvaluationCurves(classifierName, model, xtest, ytest, colorMap):
     log.info('--> do_plotEvaluationCurves()')
@@ -247,13 +284,13 @@ if __name__ == '__main__':
     # y_prediction_base = pipeline.predict(X_test)
 
     # Logistic Regression
-    lr, lr_pipe = do_PipelineOnly("lr", LogisticRegression(max_iter=10000), X_train, y_train)
-    log.info (lr_pipe._estimator_type)
-    log.info(lr_pipe.get_params())
-    log.info(lr_pipe.steps[2][0])
-    log.info(lr_pipe.steps[2][1])
-    log.info(type(lr_pipe.steps[2][1]))
-    exit(0)
+    lr, lr_pipe = do_PipelineOnly("lr", LogisticRegression(max_iter=10000, random_state=88), X_train, y_train)
+    # log.info (lr_pipe._estimator_type)
+    # log.info(lr_pipe.get_params())
+    # log.info(lr_pipe.steps[2][0])
+    # log.info(lr_pipe.steps[2][1])
+    # log.info(type(lr_pipe.steps[2][1]))
+    # exit(0)
     # do_plotConfusionMatrix("lr_cm.png", lr, X_test, y_test, 'Reds')
     # ypred = lr_pipe.predict(X_test)
     # log.info('Classification Report: ' + do_ClassificationReport(y_test, ypred))
@@ -261,45 +298,67 @@ if __name__ == '__main__':
     # do_plotAucRocCurve('lr_auc_roc', lr, X_test, y_test)
     # log.info('AUC ROC Score: ' + str(do_getAucRocScores(y_test, ypred)))
     # log.info('Recall Score: ' + str(do_getRecallScore(y_test, ypred)))    
-    do_evaluateModel(lr_pipe, X_test, y_test)
+    results_dict[lr_pipe.steps[2][0]] = do_evaluateModel(lr_pipe, X_test, y_test)
     do_plotEvaluationCurves('lr', lr, X_test, y_test, 'Reds')
     fd_eda.do_saveModel('lr.pkl', lr, 'p')
+    fd_eda.do_saveModel('lr_scaler.pkl', lr_pipe[0], 'p')
+
+    # log.info(results_dict)
+    # exit(0)
 
     # lr_cv, lr_pipescores = do_PipelineWithCV("lr", LogisticRegression(max_iter=10000), X_train, y_train, 5, ['accuracy', 'precision', 'roc_auc'])
     # log.info(lr_pipescores)
 
     # XGBoost
-    xgb, xgb_pipe = do_PipelineOnly("xgb", xgb.XGBClassifier(tree_method='exact', max_depth=3, n_estimators=50), X_train, y_train)
-    do_evaluateModel(xgb_pipe, X_test, y_test)
+    xgb, xgb_pipe = do_PipelineOnly("xgb", xgb.XGBClassifier(tree_method='exact', max_depth=3, n_estimators=50, random_state=88), X_train, y_train)
+    results_dict[xgb_pipe.steps[2][0]] = do_evaluateModel(xgb_pipe, X_test, y_test)
     do_plotEvaluationCurves('xgb', xgb, X_test, y_test, 'Reds')
     fd_eda.do_saveModel('xgb.pkl', xgb, 'p')
+    fd_eda.do_saveModel('xgb_scaler.pkl', xgb_pipe[0], 'p')
 
     # # Gaussian Naive-Bayes
     gnb, gnb_pipe = do_PipelineOnly("gnb", GaussianNB(), X_train, y_train)
-    do_evaluateModel(gnb_pipe, X_test, y_test)
+    results_dict[gnb_pipe.steps[2][0]] = do_evaluateModel(gnb_pipe, X_test, y_test)
     do_plotEvaluationCurves('gnb', gnb, X_test, y_test, 'Greens')
     fd_eda.do_saveModel('gnb.pkl', gnb, 'p')
+    fd_eda.do_saveModel('gnb_scaler.pkl', xgb_pipe[0], 'p')
 
     # Decision Tree Classifier
     dt, dt_pipe = do_PipelineOnly("dt", DecisionTreeClassifier(random_state=88, max_depth=3), X_train, y_train)
-    do_evaluateModel(dt_pipe, X_test, y_test)
+    results_dict[dt_pipe.steps[2][0]] = do_evaluateModel(dt_pipe, X_test, y_test)
     do_plotEvaluationCurves('dt', dt, X_test, y_test, 'Blues')
-    fd_eda.do_saveModel('dt.pkl', dt, 'p')    
+    fd_eda.do_saveModel('dt.pkl', dt, 'p') 
+    fd_eda.do_saveModel('dt_scaler.pkl', dt_pipe[0], 'p')  
 
-    # Bagging Classifier
-    bg, bg_pipe = do_PipelineOnly("bg", BaggingClassifier(DecisionTreeClassifier()), X_train, y_train)
-    do_evaluateModel(bg_pipe, X_test, y_test)
-    do_plotEvaluationCurves('bg', bg, X_test, y_test, 'PuBu')
-    fd_eda.do_saveModel('bg.pkl', bg, 'p')
+    # Random Forest Classifier
+    rfc, rfc_pipe = do_PipelineOnly("rfc", RandomForestClassifier(n_estimators = 50, random_state = 88, n_jobs = -1, oob_score = True), X_train, y_train)
+    results_dict[rfc_pipe.steps[2][0]] = do_evaluateModel(rfc_pipe, X_test, y_test)
+    do_plotEvaluationCurves('rfc', rfc, X_test, y_test, 'magma')
+    fd_eda.do_saveModel('rfc.pkl', rfc, 'p') 
+    fd_eda.do_saveModel('rfc_scaler.pkl', rfc_pipe[0], 'p') 
 
     # Catboost
-    cb, cb_pipe = do_PipelineOnly("cb", CatBoostClassifier(iterations=5, learning_rate=0.1), X_train, y_train)
-    do_evaluateModel(cb_pipe, X_test, y_test)
+    cb, cb_pipe = do_PipelineOnly("cb", CatBoostClassifier(iterations=5, learning_rate=0.1, random_state=88), X_train, y_train)
+    results_dict[cb_pipe.steps[2][0]] = do_evaluateModel(cb_pipe, X_test, y_test)
     do_plotEvaluationCurves('cb', cb, X_test, y_test, 'Purples')
-    fd_eda.do_saveModel('cb.pkl', cb, 'p')  
+    fd_eda.do_saveModel('cb.pkl', cb, 'p') 
+    fd_eda.do_saveModel('cb_scaler.pkl', cb_pipe[0], 'p')  
 
     # LightGBM
-    lgbm, lgbm_pipe = do_PipelineOnly("lgbm", lgbm.LGBMClassifier(boosting_type='gbdt', learning_rate=0.1), X_train, y_train)
-    do_evaluateModel(lgbm_pipe, X_test, y_test)
+    lgbm, lgbm_pipe = do_PipelineOnly("lgbm", lgbm.LGBMClassifier(boosting_type='gbdt', learning_rate=0.1, random_state=88), X_train, y_train)
+    results_dict[lgbm_pipe.steps[2][0]] = do_evaluateModel(lgbm_pipe, X_test, y_test)
     do_plotEvaluationCurves('lgbm', lgbm, X_test, y_test, 'Oranges')
     fd_eda.do_saveModel('lgbm.pkl', lgbm, 'p')
+    fd_eda.do_saveModel('lgbm_scaler.pkl', lgbm_pipe[0], 'p')
+
+    # Bagging Classifier
+    bg, bg_pipe = do_PipelineOnly("bg", BaggingClassifier(DecisionTreeClassifier(random_state=88), random_state=88), X_train, y_train)
+    results_dict[bg_pipe.steps[2][0]] = do_evaluateModel(bg_pipe, X_test, y_test)
+    do_plotEvaluationCurves('bg', bg, X_test, y_test, 'PuBu')
+    fd_eda.do_saveModel('bg.pkl', bg, 'p')
+    fd_eda.do_saveModel('bg_scaler.pkl', bg_pipe[0], 'p') 
+
+    log.info('--> RESULTS\n')
+    log.info(results_dict)
+    log.info('<-- RESULTS\n')
+    fd_eda.do_saveModel('results.pkl', results_dict, 'p')
