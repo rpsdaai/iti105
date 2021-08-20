@@ -10,8 +10,8 @@ import fd_eda
 # __name__ contains the full name of the current module
 log = logging.getLogger(__name__)
 
-lr_sclr = fd_eda.do_loadModel('D:/Users/ng_a/My NYP SDAAI/IT105-ML-Project/lr_scaler.pkl')
-lr_model = fd_eda.do_loadModel('D:/Users/ng_a/My NYP SDAAI/IT105-ML-Project/lr.pkl')
+lr_sclr = fd_eda.do_loadModel('cb_scaler.pkl')
+lr_model = fd_eda.do_loadModel('cb.pkl')
 
 # Ref: https://www.askpython.com/python-modules/flask/create-hello-world-in-flask
 # Ref: https://stackoverflow.com/questions/29277581/flask-nameerror-name-app-is-not-defined
@@ -92,61 +92,97 @@ def fd_service():
             'type_CASH_TRANSFER': txnDict['Transfer']
         }
     ]
-    log.info (mydata)
+    # log.info (mydata)
 
-    df = pd.DataFrame(mydata)
-    log.info(df.head())
-
-    scaled = lr_sclr.transform(df)
-    log.info (type(scaled))
-    log.info (scaled)
-    results = lr_model.predict(scaled)
-    log.info (results)
-
-    log.info ('Fraud Detection RESULTS: ' + str(results))
-    
-    if results[0] == 0:
-        app_status = 'Transaction NORMAL'
-    else:
-        app_status = "Transaction is FRAUDULENT"
-    
-    log.debug('<-- fraud_detection_service()')
-    return app_status
-
-    # return render_template("index.html")
-    # return redirect(url_for('fraud_detection_service', data=mydata))
-
-@app.route('/fraud_detection_service/<data>', methods=['GET', 'POST'])
-def fraud_detection_service(data):
-    log.info('--> fraud_detection_service(): ' + data)
-
-    if request.method == 'POST':
-        log.info("POST")
-    else:
-        log.info('GET')
-	# convert the string representation to a dict
-    # myData = ast.literal_eval(data)
-    # log.info(type(myData))
-
-    # df = pd.DataFrame(myData)
-	# and use it as the input
-    # df = pd.DataFrame(myData, columns=['amount',  'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'ErrorBalanceOrigin', 'ErrorBalanceDest', 'type_CASH_IN', 'type_CASH_OUT', 'type_DEBIT', 'type_PAYMENT', 'type_TRANSFER'])
+    # df = pd.DataFrame(mydata)
     # log.info(df.head())
 
-    # 1,TRANSFER,181.0,C1305486145,181.0,0.0,C553264065,0.0,0.0,1,0
-    # scaled = scaler.transform(df)
+    # scaled = lr_sclr.transform(df)
     # log.info (type(scaled))
     # log.info (scaled)
-    # result = model.predict(scaled)
-    # log.info ('Fraud Detection RESULTS: ' + str(result))
+    # results = lr_model.predict(scaled)
+    # log.info (results)
+
+    # log.info ('Fraud Detection RESULTS: ' + str(results))
     
-    # if result[0] == 0:
+    # if results[0] == 0:
     #     app_status = 'Transaction NORMAL'
     # else:
     #     app_status = "Transaction is FRAUDULENT"
     
     # log.debug('<-- fraud_detection_service()')
-    # return app_status    
+    # return app_status
+
+    # return render_template("index.html")
+    return redirect(url_for('fraud_detection_service', data=mydata))
+
+@app.route('/fraud_detection_service/<data>', methods=['GET', 'POST'])
+def fraud_detection_service(data):
+    log.info('--> fraud_detection_service(): ' + data)
+    log.info(type(data))
+
+    if request.method == 'POST':
+        log.info("POST")
+    else:
+        log.info('GET')
+     
+    # log.info("GET args:\n")
+    # log.info(request.args.get('amount'))
+    # log.info('DATA\n')
+    # log.info(dict(data))
+	# convert the string representation to a dict
+    myData = ast.literal_eval(data)
+    # log.info("Convert String to Dictionary: \n")
+    # for d in myData:
+    #     for key in d:
+    #         print (key)
+
+    log.info('Length of list: ' + str(len(myData)) )
+    # Ref: https://stackoverflow.com/questions/5236296/how-to-convert-list-of-dict-to-dict
+    myDict = dict(myData[0])
+    log.info(myDict)
+
+    # a_key = "amount"
+    # values_of_key = [a_dict[a_key] for a_dict in myData]
+    # log.info(values_of_key)
+
+    # log.info(myData)
+    # log.info(type(myData))
+
+    # df = pd.DataFrame(myDict)
+	# and use it as the input
+    log.info(myDict.values())
+    log.info(myDict.keys())
+
+    log.info(type(list(myDict.values())))
+    log.info(type(list(myDict.keys())))
+    # df = pd.DataFrame(myDict.values(), columns=['amount',  'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'ErrorBalanceOrigin', 'ErrorBalanceDest', 'type_CASH_IN', 'type_CASH_OUT', 'type_DEBIT', 'type_PAYMENT', 'type_TRANSFER'])
+    df = pd.DataFrame(myData)
+    log.info(df.head())
+
+    # 1,TRANSFER,181.0,C1305486145,181.0,0.0,C553264065,0.0,0.0,1,0
+    scaled = lr_sclr.transform(df)
+    log.info (type(scaled))
+    log.info (scaled)
+    results = lr_model.predict(scaled)
+    log.info (results)
+    
+    if results[0] == 0:
+         app_status = 'Transaction NORMAL'
+    else:
+        app_status = "Transaction is FRAUDULENT"
+    
+    log.debug('<-- fraud_detection_service()')
+    # return app_status
+    # return "OK"
+    return redirect(url_for('fraud_results', data=app_status))
+
+@app.route('/fraud_results/<data>', methods=['GET', 'POST'])
+def fraud_results(data):
+    # Ref: https://www.digitalocean.com/community/tutorials/how-to-make-a-web-application-using-flask-in-python-3
+    # Ref: https://www.digitalocean.com/community/tutorials/processing-incoming-request-data-in-flask        
+    return '''<h1>Fraud Detection Results</h1><p>Verdict: {}'''.format(data)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
