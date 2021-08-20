@@ -6,25 +6,63 @@
     <title>Fraud Detection Service</title>
 </head>
 
+<body>
+<!--
+train['Gender'] = train['Gender'].map({'Female': 0,'Male': 1})
+train['Married'] = train['Married'].map({'No': 0,'Yes': 1})
+train['Dependents'] = train['Dependents'].map({'0':0, '1':1, '2':2, '3':3, '3+': 3})
+train['Education'] = train['Education'].map({'Not Graduate': 0,'Graduate': 1})
+train['Self_Employed'] = train['Self_Employed'].map({'No': 0,'Yes': 1})
+train['Property_Area'] = train['Property_Area'].map({'Rural': 0,'Semiurban':1, 'Urban': 2})
+train['Loan_Status'] = train['Loan_Status'].map({'N': 0,'Y': 1})
+-->
 <h1>Fraud Detection Service</h1>
 
-<html>
-   <body>
-      <form action = "fd_service" method = "POST">
-         <p>Amount <input type="number" name="amount" value=181.0></p>
-         <p>Old Balance (Origin) <input type = "number" name = "old_bal_org" value=181.0></p>
-         <p>New Balance (Origin) <input type = "number" name = "new_bal_org" value=0.0></p>
-         <p>Old Balance (Destination) <input type ="number" name = "old_bal_dest" value=0.0></p>
-         <p>New Balance (Destination) <input type ="number" name = "new_bal_dest" value=0.0></p>  
-         
-         <p>Transaction Types</p>  
-         <input type="radio" name="txnType" value="Cash In"> Cash IN <br>  
-         <input type="radio" name="txnType" value="Cash Out"> Cash OUT <br>  
-         <input type="radio" name="txnType" value="Debit">Debit <br>  
-         <input type="radio" name="txnType" value="Payment" >Payment <br>  
-         <input type="radio" name="txnType" value="Transfer" checked=true>Transfer <br> 
-   
-         <p><input type = "submit" value = "submit" /></p>
-      </form>
-   </body>
+<!-- form action = "http://localhost:5000/test_form_service/" method="post" -->
+<form action="{{ url_for('fd_service') }}" method="post">
+     <fieldset>
+         <legend>Transaction Amounts</legend>
+         <p>
+              Amount:
+              <input type="number" name="amount" value="181.0">
+        </p>
+     </fieldset>
+
+
+   <fieldset>
+      <legend>Balances</legend>
+      <p>
+         Old Balance Original:
+         <input type="number" name="old_bal_org" value="0.0">
+         Old Balance Destination:
+         <input type="number" name="old_bal_dest" value="0.0">
+         New Balance Original:
+         <input type="number" name="new_bal_org" value="0.0">
+         New Balance Destination:
+         <input type="number" name="new_bal_dest" value="0.0">         
+      </p>
+   </fieldset>
+
+   <fieldset>
+      <legend>Transaction Type</legend>
+      <p>
+          Cash In:
+          <input type="radio" name="txnType" id="txnType" value="Cash In">
+          Cash Out:
+          <input type="radio" name="txnType" id="txnType"  value="Cash Out">
+          Debit:
+          <input type="radio" name="txnType" id="txnType" value="Debit">
+          Payment:
+          <input type="radio" name="txnType" id="txnType"  value="Payment">
+          Transfer:
+          <input type="radio" name="txnType" id="txnType" value="Transfer" checked>                
+      </p>
+   </fieldset>
+
+<hr/>
+
+<input type="submit" value="Submit">
+
+ </form>
+</body>
 </html>
