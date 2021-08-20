@@ -63,7 +63,10 @@ from sklearn.metrics import classification_report
 #     cross_validate
 # )
 
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
@@ -80,15 +83,6 @@ import logging
 # Turn off - DEBUG findfont: score(<Font 'DejaVu Sans' (DejaVuSans-Oblique.ttf) oblique normal 400 normal>) = 1.05
 # Ref: https://github.com/matplotlib/matplotlib/issues/14523
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
-
-# Log to both console + file
-# logging.basicConfig(level=logging.DEBUG,
-#                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-#                     datefmt='%Y-%m-%d %H:%M:%S',
-#                     handlers=[
-#                         logging.FileHandler('fraud_detection.log', 'w', 'utf-8'),
-#                         logging.StreamHandler(sys.stdout)
-#                     ])
 
 # __name__ contains the full name of the current module
 log = logging.getLogger(__name__)
@@ -123,7 +117,10 @@ def do_SplitData(df, cols2drop, nSplits, testSize, randomState, targetLabel):
 
 
 def do_GridSearch(classifierName, classifier, params, xval, X_train, y_train):
-    pipeline = Pipeline([("scaler", StandardScaler()), ("smote", SMOTE(random_state = 2)), ("rus", RandomUnderSampler()),  (classifierName, classifier)])
+    log.info('--> do_GridSearch(): ' + classifierName)
+
+    # pipeline = Pipeline([("scaler", StandardScaler()), ("smote", SMOTE(random_state = 2)), ("rus", RandomUnderSampler()),  (classifierName, classifier)])
+    pipeline = Pipeline([("scaler", StandardScaler()), ("smote", SMOTE(random_state = 2)), (classifierName, classifier)])
 
     # use gridsearch to test all values for n_neighbors
     grid = GridSearchCV(pipeline, params, cv=xval)
@@ -131,13 +128,17 @@ def do_GridSearch(classifierName, classifier, params, xval, X_train, y_train):
     # fit model to training data
     model = grid.fit(X_train, y_train)
 
-    y_pred = grid.predict(X_test)
+    # y_pred = grid.predict(X_test)
 
     # save best model
-    lr_best = grid.best_estimator_
+    grid_best = grid.best_estimator_
 
-    # check best n_neigbors value
-    print(grid.best_params_)
+    # check best parameters
+    log.info('Best parameters:\n')
+    log.info(grid.best_params_)
+
+    log.info('Best Score\n')
+    log.info(str(grid.best_score_))
 
     return grid, model
 
@@ -234,29 +235,70 @@ def do_evaluateModel(pipeline, xtest, ytest):
 
     return results
 
+def do_evaluateModel_GS(key, pipeline, xtest, ytest):
+    log.info('--> do_evaluateModel()')
+
+    ypred = pipeline.predict(xtest)
+
+    # Ref: https://www.geeksforgeeks.org/python-nested-dictionary/
+    results = {}
+    results[key] = {}
+    results[key]['classificationReport'] = do_ClassificationReport(ytest, ypred)
+    results[key]['auc_roc_score'] = do_getAucRocScore(ytest, ypred)
+    results[key]['recall_scores'] = do_getRecallScore(ytest, ypred)
+    results[key]['precision_scores'] = do_getPrecisionScore(ytest, ypred)
+    results[key]['f1_scores'] = do_getF1Score(ytest, ypred)
+    results[key]['balanced_accuracy_scores'] = do_getBalancedAccuracyScore(ytest, ypred)
+
+    log.info('Classification Report: ' + do_ClassificationReport(ytest, ypred))
+    log.info('AUC ROC Score: ' + str(do_getAucRocScore(ytest, ypred)))
+    log.info('Recall Score: ' + str(do_getRecallScore(ytest, ypred))) 
+    log.info('Precision Score: ' + str(do_getPrecisionScore(ytest, ypred))) 
+    log.info('F1 Score: ' + str(do_getF1Score(ytest, ypred)))
+    log.info('Balanced Accuracy Score: ' + str(do_getBalancedAccuracyScore(ytest, ypred)))
+
+    return results
+
 def do_plotEvaluationCurves(classifierName, model, xtest, ytest, colorMap):
     log.info('--> do_plotEvaluationCurves()')
     do_plotConfusionMatrix(classifierName+'_cm', model, xtest, ytest, colorMap)
     do_plotPRCurve(classifierName+'_pr', model, xtest, ytest)
     do_plotAucRocCurve(classifierName+'_auc_roc', model, xtest, ytest)
 
-# def model_selection(classifier, name, grid, X_train, y_train, scoring):
-    
-#     gridsearch_cv=GridSearchCV(classifier, 
-#                                grid,
-#                                cv=5, 
-#                                scoring = scoring)
-    
-#     gridsearch_cv.fit(X_adasyn, y_adasyn)
-    
-#     results_dict = {}
-    
-#     results_dict['classifier_name'] = name    
-#     results_dict['classifier'] = gridsearch_cv.best_estimator_
-#     results_dict['best_params'] = gridsearch_cv.best_params_
-#     results_dict['ROC_AUC'] = gridsearch_cv.best_score_
-    
-#     return(results_dict)
+# Ref: https://www.analyseup.com/learn-python-for-data-science/python-random-forest-feature-importance-plot.html
+def do_plotFeatureImportance(filename, importance, names):
+    # Define size of bar plot
+    fig = plt.figure(figsize = (12, 6))
+
+    # Create arrays from feature importance and feature names
+    feature_importance = np.array(importance)
+    log.info(feature_importance)
+    feature_names = np.array(names)
+    log.info(feature_names)
+
+    # Create a DataFrame using a Dictionary
+    data={'feature_names':feature_names,'feature_importance':feature_importance}
+    log.info(data)
+    fi_df = pd.DataFrame(data)
+
+    # Sort the DataFrame in order decreasing feature importance
+    fi_df.sort_values(by=['feature_importance'], ascending=False, inplace=True)
+
+    # Plot Searborn bar chart
+    ax = sns.barplot(x=fi_df['feature_importance'], y=fi_df['feature_names'], palette="bright")
+
+    # Annotate text on horizontal Seaborn barplot
+    # https://www.py4u.net/discuss/243741
+    for p in ax.patches:
+        ax.annotate("%.3f" % p.get_width(), xy=(p.get_width(), p.get_y()+p.get_height()/2), xytext=(5, 0), textcoords='offset points', ha="left", va="center")
+
+    # Add chart labels
+    plt.title('Visualizing Important Features')
+    plt.xlabel('Feature Importance Score')
+    plt.ylabel('Features')
+
+    fig.savefig(filename)
+    plt.close()
 
 # Explore the dataset to get general feel
 if __name__ == '__main__':
@@ -267,47 +309,13 @@ if __name__ == '__main__':
     # # TRAIN TEST SPLITTING
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=88)
     X_train, X_test, y_train, y_test = do_SplitData(df, ['step', 'nameOrig', 'nameDest', 'isFlaggedFraud'], 1, 0.2, 88, 'isFraud')
-    # log.info('X_train: \n')
-    # log.info(X_train.head())
-
-    # log.info('X_test: \n')
-    # log.info(X_test.head())
-
-    # log.info('y_train: ')
-    # log.info(y_train.value_counts())
-
-    # log.info('y_test: ')
-    # log.info(y_test.value_counts())    
-
-    # pipeline = Pipeline([("scaler", StandardScaler()), ("smote", SMOTE(random_state = 2)), ("lr", LogisticRegressionCV(cv=5, max_iter=10000))])
-    # lrcv = pipeline.fit(X_train, y_train)
-    # y_prediction_base = pipeline.predict(X_test)
 
     # Logistic Regression
     lr, lr_pipe = do_PipelineOnly("lr", LogisticRegression(max_iter=10000, random_state=88), X_train, y_train)
-    # log.info (lr_pipe._estimator_type)
-    # log.info(lr_pipe.get_params())
-    # log.info(lr_pipe.steps[2][0])
-    # log.info(lr_pipe.steps[2][1])
-    # log.info(type(lr_pipe.steps[2][1]))
-    # exit(0)
-    # do_plotConfusionMatrix("lr_cm.png", lr, X_test, y_test, 'Reds')
-    # ypred = lr_pipe.predict(X_test)
-    # log.info('Classification Report: ' + do_ClassificationReport(y_test, ypred))
-    # do_plotPRCurve('lr_pr', lr, X_test, y_test)
-    # do_plotAucRocCurve('lr_auc_roc', lr, X_test, y_test)
-    # log.info('AUC ROC Score: ' + str(do_getAucRocScores(y_test, ypred)))
-    # log.info('Recall Score: ' + str(do_getRecallScore(y_test, ypred)))    
     results_dict[lr_pipe.steps[2][0]] = do_evaluateModel(lr_pipe, X_test, y_test)
     do_plotEvaluationCurves('lr', lr, X_test, y_test, 'Reds')
     fd_eda.do_saveModel('lr.pkl', lr, 'p')
     fd_eda.do_saveModel('lr_scaler.pkl', lr_pipe[0], 'p')
-
-    # log.info(results_dict)
-    # exit(0)
-
-    # lr_cv, lr_pipescores = do_PipelineWithCV("lr", LogisticRegression(max_iter=10000), X_train, y_train, 5, ['accuracy', 'precision', 'roc_auc'])
-    # log.info(lr_pipescores)
 
     # XGBoost
     xgb, xgb_pipe = do_PipelineOnly("xgb", xgb.XGBClassifier(tree_method='exact', max_depth=3, n_estimators=50, random_state=88), X_train, y_train)
@@ -334,6 +342,7 @@ if __name__ == '__main__':
     rfc, rfc_pipe = do_PipelineOnly("rfc", RandomForestClassifier(n_estimators = 50, random_state = 88, n_jobs = -1, oob_score = True), X_train, y_train)
     results_dict[rfc_pipe.steps[2][0]] = do_evaluateModel(rfc_pipe, X_test, y_test)
     do_plotEvaluationCurves('rfc', rfc, X_test, y_test, 'magma')
+    do_plotFeatureImportance('feature_importance.png', rfc_pipe.steps[2][1].feature_importances_, X_test.columns.values.tolist())
     fd_eda.do_saveModel('rfc.pkl', rfc, 'p') 
     fd_eda.do_saveModel('rfc_scaler.pkl', rfc_pipe[0], 'p') 
 
@@ -358,6 +367,7 @@ if __name__ == '__main__':
     fd_eda.do_saveModel('bg.pkl', bg, 'p')
     fd_eda.do_saveModel('bg_scaler.pkl', bg_pipe[0], 'p') 
 
+    # Consolidated Results
     log.info('--> RESULTS\n')
     log.info(results_dict)
     log.info('<-- RESULTS\n')

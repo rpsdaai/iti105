@@ -31,7 +31,7 @@ logging.getLogger('matplotlib').setLevel(logging.ERROR)
 #                     ])
 log = logging.getLogger(__name__)
 
-vizDestDir = 'vzDump/'
+vizDestDir = 'D:/Users/ng_a/My NYP SDAAI/IT105-ML-Project/vzDump_test/'
 
 # Ref: https://www.tutorialspoint.com/enum-in-python
 class timeStep(IntEnum):
@@ -370,17 +370,20 @@ if __name__ == '__main__':
     df_skew = do_Skew(df)
     df_kurt = do_Kurtosis(df)
 
-    # plotTransactionsOverTime(df, vizDestDir + 'txnOverTime')
+    fd_eda.checkDirectoryExists(vizDestDir)
 
-    # plotTransactionsOverTimeBy(df, vizDestDir + 'txnOverTime_dayOfWeek', timeStep.dayofWeek, 'Day of the Week', '# Transactions',
-    #                            'Fraud Transactions by Day', 'Normal Transactions by Day')
-    # plotTransactionsOverTimeBy(df, vizDestDir + 'txnOverTime_hourOfDay', timeStep.hourOfDay, 'Hour of Day', '# Transactions',
-    #                            'Fraud Transactions by Hour', 'Normal Transactions by Hour')
-    # plotFraudTransactionCounts(df, 'isFraud', vizDestDir + 'fraudTxnCounts')
-    # plotCountTransactionTypes(df, 'type', vizDestDir + 'typeTxnCounts')
-    # plotCountTransactionTypesGrpByFraudTypes(df, ['type','isFraud'], vizDestDir + 'typeFraudTxn')
-    # plotCorrelationMap(df, 'type', ['step', 'nameOrig', 'nameDest', 'isFlaggedFraud'], vizDestDir + 'corrMap') # not feature engineered yet
-    # plotFraudByTransactionType(df, vizDestDir + 'fraudByTxnType')
+    plotTransactionsOverTime(df, vizDestDir + 'txnOverTime')
+
+    plotTransactionsOverTimeBy(df, vizDestDir + 'txnOverTime_dayOfWeek', timeStep.dayofWeek, 'Day of the Week', '# Transactions',
+                               'Fraud Transactions by Day', 'Normal Transactions by Day')
+    plotTransactionsOverTimeBy(df, vizDestDir + 'txnOverTime_hourOfDay', timeStep.hourOfDay, 'Hour of Day', '# Transactions',
+                               'Fraud Transactions by Hour', 'Normal Transactions by Hour')
+    plotFraudTransactionCounts(df, 'isFraud', vizDestDir + 'fraudTxnCounts')
+    plotCountTransactionTypes(df, 'type', vizDestDir + 'typeTxnCounts')
+    plotCountTransactionTypesGrpByFraudTypes(df, ['type','isFraud'], vizDestDir + 'typeFraudTxn')
+    plotCorrelationMap(df, 'type', ['step', 'nameOrig', 'nameDest', 'isFlaggedFraud'], vizDestDir + 'corrMap') # not feature engineered yet
+    plotFraudByTransactionType(df, vizDestDir + 'fraudByTxnType')
+    
     plotBalances(fd_eda.computeSrcBalance(df), 'Sender Balance Amount Mismatches', vizDestDir + 'senderBalAmtMismatch')
     plotBalances(fd_eda.computeDestinationBalance(df), 'Receipient Balance Amount Mismatches', vizDestDir + 'receipientBalAmtMismatch')
     plotBalances(fd_eda.countSrcAmountTransferredExceedsBalance(df),

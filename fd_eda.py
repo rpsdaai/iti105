@@ -6,6 +6,7 @@ from sklearn.exceptions import DataConversionWarning
 
 warnings.filterwarnings(action='ignore', category=DataConversionWarning)
 
+import os
 import sys
 import logging
 
@@ -15,7 +16,7 @@ import joblib
 # Ref: https://miamioh.instructure.com/courses/38817/pages/data-cleaning
 
 # Log to both console + file
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     handlers=[
@@ -62,8 +63,8 @@ def getDimensions(df):
 # get min, max, count, mean, standard deviation, median, 25 percentile, 75 percentile
 def getStatisticalInfo(df):
     log.info('\n--> getStatisticalInfo()\n')
-    log.info(df.describe())
-
+    # log.info(df.describe())
+    return df.describe()
 
 # Check for missing, null values
 def checkMissingValues(df):
@@ -137,6 +138,7 @@ def getCountNormalTransactionTypes(df, column):
     return df[df['isFraud'] == 0][column].value_counts()
 
 
+# NOT USED
 def doPrepareAndSplitData(df, columns2Drop):
     # Ref: https://www.decalage.info/en/python/print_list
     log.info('\n--> doPrepareAndSplitData(): columns2Drop = ' + ', '.join(columns2Drop) + '\n')
@@ -238,35 +240,29 @@ def do_loadModel(filename):
 		model = pickle.load(f)
 	return (model)
 
-# # Save results to disk
-# def do_saveResults(filename, model, which_library):
-# 	log.debug('--> do_saveResults(): ' + filename + ' library to use: ' + which_library)
-# 	with open(filename, 'wb') as f:
-# 		if which_library == 'p':
-# 			pickle.dump(model, f)
-# 		else:
-# 			joblib.dump(model, f)
 
+def checkDirectoryExists(directoryName):
+    # If folder doesn't exist, then create it.
+    if not os.path.isdir(directoryName):
+        os.makedirs(directoryName)
+        log.info("Directory: " + directoryName + " created!")
+    else:
+        log.info ("Directory: " + directoryName + " already exists!")
 
-# # Load results from disk
-# def do_loadResults(filename):
-# 	log.debug('--> do_loadResults(): ' + filename)
-# 	with open(filename, 'rb') as f:
-# 		model = pickle.load(f)
-# 	return (model)    
 
 # Explore the dataset to get general feel
 if __name__ == '__main__':
     df = read_datatset(dataset_dir, datafile)
-    # log.info(getFrequencies('isFraud', df))
-    # log.info(getFrequencies('isFlaggedFraud', df))
-    # log.info(getUniqueValues('isFraud', df))
-    # log.info(getUniqueValues('isFlaggedFraud', df))
-    # log.info(getDimensions(df))
-    # log.info(getStatisticalInfo(df))
-    # log.info(checkMissingValues(df))
-    # log.info(getNumberMissingValues(df))
-    # log.info(getListofColumnNames(df))
+
+    log.info(getFrequencies('isFraud', df))
+    log.info(getFrequencies('isFlaggedFraud', df))
+    log.info(getUniqueValues('isFraud', df))
+    log.info(getUniqueValues('isFlaggedFraud', df))
+    log.info(getDimensions(df))
+    log.info(getStatisticalInfo(df))
+    log.info(checkMissingValues(df))
+    log.info(getNumberMissingValues(df))
+    log.info(getListofColumnNames(df))
 
     # Count the number of fraudulent transactions by amount (isFruad)
     log.info('\n' + str(getCountFraudulentTransactionByAmounts(df, 'isFraud', ['amount', 'isFraud'])) + '\n')
@@ -287,11 +283,11 @@ if __name__ == '__main__':
     # Get normal count for original column, 'type'
     log.info('\n' + str(getCountNormalTransactionTypes(df_tmp, 'type')) + '\n')
 
-    # log.info('\n' + 'Statistics for Fraudulent Transactions' + '\n')
-    # log.info(getStatisticalInfo(df[df['isFraud'] == 1]['amount']))
+    log.info('\n' + 'Statistics for Fraudulent Transactions' + '\n')
+    log.info(getStatisticalInfo(df[df['isFraud'] == 1]['amount']))
 
-    # log.info('\n' + 'Statistics for NORMAL Transactions' + '\n')
-    # log.info(getStatisticalInfo(df[df['isFraud'] == 0]['amount']))
+    log.info('\n' + 'Statistics for NORMAL Transactions' + '\n')
+    log.info(getStatisticalInfo(df[df['isFraud'] == 0]['amount']))
 
     # df_new = do_FeatureEngineering_ErrorBalanceAmt(df)
     # df_orig = df.copy()
