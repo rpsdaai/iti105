@@ -127,11 +127,14 @@ def do_GridSearch(classifierName, classifier, params, xval, X_train, y_train):
 
     # fit model to training data
     model = grid.fit(X_train, y_train)
-
+    log.info("Grid FIT: \n")
+    log.info(model)
     # y_pred = grid.predict(X_test)
 
     # save best model
-    grid_best = grid.best_estimator_
+    grid_best_model = grid.best_estimator_
+    log.info('Best Model: \n')
+    log.info(grid_best_model)
 
     # check best parameters
     log.info('Best parameters:\n')
@@ -140,7 +143,7 @@ def do_GridSearch(classifierName, classifier, params, xval, X_train, y_train):
     log.info('Best Score\n')
     log.info(str(grid.best_score_))
 
-    return grid, model
+    return grid, grid_best_model
 
 def do_PipelineOnly(classifierName, classifier, X_train, y_train):
     log.info('--> doPipelineOnly(): ' + classifierName)
@@ -306,30 +309,31 @@ if __name__ == '__main__':
     df = fd_eda.read_datatset(fd_eda.dataset_dir, fd_eda.datafile)
     # df_new  = fd_eda.doPrepareData(df, ['step', 'nameOrig', 'nameDest', 'isFlaggedFraud'])
 
-    # # TRAIN TEST SPLITTING
+    # TRAIN TEST SPLITTING
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=88)
     X_train, X_test, y_train, y_test = do_SplitData(df, ['step', 'nameOrig', 'nameDest', 'isFlaggedFraud'], 1, 0.2, 88, 'isFraud')
 
-    # Logistic Regression
+    # Logistic Regression **lr and lr_pipe** same type 'imblearn.pipeline.Pipeline'
     lr, lr_pipe = do_PipelineOnly("lr", LogisticRegression(max_iter=10000, random_state=88), X_train, y_train)
     results_dict[lr_pipe.steps[2][0]] = do_evaluateModel(lr_pipe, X_test, y_test)
     do_plotEvaluationCurves('lr', lr, X_test, y_test, 'Reds')
+    # Ref: https://cloud.google.com/ai-platform/prediction/docs/using-pipelines
     fd_eda.do_saveModel('lr.pkl', lr, 'p')
     fd_eda.do_saveModel('lr_scaler.pkl', lr_pipe[0], 'p')
 
     # XGBoost
     xgb, xgb_pipe = do_PipelineOnly("xgb", xgb.XGBClassifier(tree_method='exact', max_depth=3, n_estimators=50, random_state=88), X_train, y_train)
     results_dict[xgb_pipe.steps[2][0]] = do_evaluateModel(xgb_pipe, X_test, y_test)
-    do_plotEvaluationCurves('xgb', xgb, X_test, y_test, 'Reds')
+    do_plotEvaluationCurves('xgb', xgb, X_test, y_test, 'PiYG')
     fd_eda.do_saveModel('xgb.pkl', xgb, 'p')
     fd_eda.do_saveModel('xgb_scaler.pkl', xgb_pipe[0], 'p')
 
-    # # Gaussian Naive-Bayes
+    # Gaussian Naive-Bayes
     gnb, gnb_pipe = do_PipelineOnly("gnb", GaussianNB(), X_train, y_train)
     results_dict[gnb_pipe.steps[2][0]] = do_evaluateModel(gnb_pipe, X_test, y_test)
     do_plotEvaluationCurves('gnb', gnb, X_test, y_test, 'Greens')
     fd_eda.do_saveModel('gnb.pkl', gnb, 'p')
-    fd_eda.do_saveModel('gnb_scaler.pkl', xgb_pipe[0], 'p')
+    fd_eda.do_saveModel('gnb_scaler.pkl', gnb_pipe[0], 'p')
 
     # Decision Tree Classifier
     dt, dt_pipe = do_PipelineOnly("dt", DecisionTreeClassifier(random_state=88, max_depth=3), X_train, y_train)
@@ -351,7 +355,7 @@ if __name__ == '__main__':
     results_dict[cb_pipe.steps[2][0]] = do_evaluateModel(cb_pipe, X_test, y_test)
     do_plotEvaluationCurves('cb', cb, X_test, y_test, 'Purples')
     fd_eda.do_saveModel('cb.pkl', cb, 'p') 
-    fd_eda.do_saveModel('cb_scaler.pkl', cb_pipe[0], 'p')  
+    fd_eda.do_saveModel('cb_scaler.pkl', cb_pipe[0], 'p')
 
     # LightGBM
     lgbm, lgbm_pipe = do_PipelineOnly("lgbm", lgbm.LGBMClassifier(boosting_type='gbdt', learning_rate=0.1, random_state=88), X_train, y_train)
