@@ -10,8 +10,14 @@ import fd_eda
 # __name__ contains the full name of the current module
 log = logging.getLogger(__name__)
 
-lr_sclr = fd_eda.do_loadModel('cb_scaler.pkl')
-lr_model = fd_eda.do_loadModel('cb.pkl')
+# datadir = 'D:/Users/ng_a/My NYP SDAAI/IT105-ML-Project/models/'
+datadir = 'D:/Users/ng_a/My NYP SDAAI/tmp/iti105/'
+# lr_sclr = fd_eda.do_loadModel(datadir + 'cb_scaler.pkl')
+# lr_model = fd_eda.do_loadModel(datadir + 'cb.pkl')
+sclr = fd_eda.do_loadModel(datadir + 'cb_best_scaler_gs.pkl')
+model = fd_eda.do_loadModel(datadir + 'cb_best_gs.pkl')
+log.info(type(sclr))
+log.info(type(model))
 
 # Ref: https://www.askpython.com/python-modules/flask/create-hello-world-in-flask
 # Ref: https://stackoverflow.com/questions/29277581/flask-nameerror-name-app-is-not-defined
@@ -139,8 +145,8 @@ def fraud_detection_service(data):
 
     log.info('Length of list: ' + str(len(myData)) )
     # Ref: https://stackoverflow.com/questions/5236296/how-to-convert-list-of-dict-to-dict
-    myDict = dict(myData[0])
-    log.info(myDict)
+    # myDict = dict(myData[0])
+    # log.info(myDict)
 
     # a_key = "amount"
     # values_of_key = [a_dict[a_key] for a_dict in myData]
@@ -151,20 +157,24 @@ def fraud_detection_service(data):
 
     # df = pd.DataFrame(myDict)
 	# and use it as the input
-    log.info(myDict.values())
-    log.info(myDict.keys())
+    # log.info(myDict.values())
+    # log.info(myDict.keys())
 
-    log.info(type(list(myDict.values())))
-    log.info(type(list(myDict.keys())))
+    # log.info(type(list(myDict.values())))
+    # log.info(type(list(myDict.keys())))
     # df = pd.DataFrame(myDict.values(), columns=['amount',  'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'ErrorBalanceOrigin', 'ErrorBalanceDest', 'type_CASH_IN', 'type_CASH_OUT', 'type_DEBIT', 'type_PAYMENT', 'type_TRANSFER'])
-    df = pd.DataFrame(myData)
+    df = pd.DataFrame([myData])
     log.info(df.head())
 
     # 1,TRANSFER,181.0,C1305486145,181.0,0.0,C553264065,0.0,0.0,1,0
-    scaled = lr_sclr.transform(df)
+    # use fit_transform() for doGridSearch returned Scaler
+    # scaled = lr_sclr.fit_transform(df) # only if return scaler direct from GridSearchCV no need after fixing return type of do_GridSearch
+    # use transform() for doPipeline returned Scaler
+    scaled = sclr.transform(df)
+
     log.info (type(scaled))
     log.info (scaled)
-    results = lr_model.predict(scaled)
+    results = model.predict(scaled)
     log.info (results)
     
     if results[0] == 0:
