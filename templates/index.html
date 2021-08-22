@@ -1,68 +1,63 @@
 <!-- https://www.w3schools.com/html/html_form_input_types.asp -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Fraud Detection Service</title>
+   <meta charset="UTF-8">
+   <title>Fraud Detection Service</title>
 </head>
 
 <body>
-<!--
-train['Gender'] = train['Gender'].map({'Female': 0,'Male': 1})
-train['Married'] = train['Married'].map({'No': 0,'Yes': 1})
-train['Dependents'] = train['Dependents'].map({'0':0, '1':1, '2':2, '3':3, '3+': 3})
-train['Education'] = train['Education'].map({'Not Graduate': 0,'Graduate': 1})
-train['Self_Employed'] = train['Self_Employed'].map({'No': 0,'Yes': 1})
-train['Property_Area'] = train['Property_Area'].map({'Rural': 0,'Semiurban':1, 'Urban': 2})
-train['Loan_Status'] = train['Loan_Status'].map({'N': 0,'Y': 1})
--->
-<h1>Fraud Detection Service</h1>
+   <h1>Fraud Detection Service</h1>
 
-<!-- form action = "http://localhost:5000/test_form_service/" method="post" -->
-<form action="{{ url_for('fd_service') }}" method="post">
-     <fieldset>
+   <!-- form action = "http://localhost:5000/test_form_service/" method="post" -->
+   <form action="{{ url_for('fd_service') }}" method="post">
+      <fieldset>
          <legend>Transaction Amounts</legend>
          <p>
-              Amount:
-              <input type="number" name="amount" value="181.0">
-        </p>
-     </fieldset>
+            Amount:
+            <input type="number" name="amount" value="181.0" step="any">
+            <!-- added steps any attribute to prevent validation error from browser -->
+            <!-- https://isotoma.com/blog/2012/03/02/html5-input-typenumber-and-decimalsfloats-in-chrome/ -->
+         </p>
+      </fieldset>
 
 
-   <fieldset>
-      <legend>Balances</legend>
-      <p>
-         Old Balance Original:
-         <input type="number" name="old_bal_org" value="0.0">
-         Old Balance Destination:
-         <input type="number" name="old_bal_dest" value="0.0">
-         New Balance Original:
-         <input type="number" name="new_bal_org" value="0.0">
-         New Balance Destination:
-         <input type="number" name="new_bal_dest" value="0.0">         
-      </p>
-   </fieldset>
+      <fieldset>
+         <legend>Balances</legend>
+         <p>
+            Old Balance Original:
+            <input type="number" name="old_bal_org" value="0.0" step="any">
+            Old Balance Destination:
+            <input type="number" name="old_bal_dest" value="0.0" step="any">
+            New Balance Original:
+            <input type="number" name="new_bal_org" value="0.0" step="any">
+            New Balance Destination:
+            <input type="number" name="new_bal_dest" value="0.0" step="any">
+         </p>
+      </fieldset>
 
-   <fieldset>
-      <legend>Transaction Type</legend>
-      <p>
-          Cash In:
-          <input type="radio" name="txnType" id="txnType" value="Cash In">
-          Cash Out:
-          <input type="radio" name="txnType" id="txnType"  value="Cash Out">
-          Debit:
-          <input type="radio" name="txnType" id="txnType" value="Debit">
-          Payment:
-          <input type="radio" name="txnType" id="txnType"  value="Payment">
-          Transfer:
-          <input type="radio" name="txnType" id="txnType" value="Transfer" checked>                
-      </p>
-   </fieldset>
+      <fieldset>
+         <legend>Transaction Type</legend>
+         <p>
+            Cash In:
+            <input type="radio" name="txnType" id="txnType" value="Cash In">
+            Cash Out:
+            <input type="radio" name="txnType" id="txnType" value="Cash Out">
+            Debit:
+            <input type="radio" name="txnType" id="txnType" value="Debit">
+            Payment:
+            <input type="radio" name="txnType" id="txnType" value="Payment">
+            Transfer:
+            <input type="radio" name="txnType" id="txnType" value="Transfer" checked>
+         </p>
+      </fieldset>
 
-<hr/>
+      <hr />
 
-<input type="submit" value="Submit">
+      <input type="submit" value="Submit">
 
- </form>
+   </form>
 </body>
+
 </html>
